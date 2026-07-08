@@ -54,8 +54,21 @@ mattered.
   two independent Modbus tools and found one uses 1-based register numbering
   while the other uses raw 0-based wire addresses, so the same physical value
   appears one address apart between them. Confirmed the wire address is the
-  ground truth, matching the OpenPLC address offsets. This must be calibrated in
-  the .NET reader (against a known constant register) before any reading is
-  trusted, to avoid silently recording the wrong register.
+  ground truth, matching the OpenPLC address offsets.
 
+---
+ 
+## Wednesday, 8 July 2026
+ 
+**Focus: containerising the .NET poller onto the OT network.**
+ 
+- **Confirmed no wire address offset in the .NET reader.** Cross-checked the
+  register addresses read by the NModbus code against the tool baseline for
+  multiple registers.
+- **Containerised the .NET poller and ran it on the OT network.** Wrote a
+  Dockerfile for the poller, built the image, and ran the container attached to
+  the GRFICS process network. The container read a live register value back from
+  the OpenPLC controller from inside the segmented network.
+- **Contiguous block read.** The poller reads a contiguous block of
+  registers in a single Modbus call rather than one call per register.
 ---
