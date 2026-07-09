@@ -72,3 +72,15 @@ mattered.
 - **Contiguous block read.** The poller reads a contiguous block of
   registers in a single Modbus call rather than one call per register.
 ---
+
+## Thursday, 9 July 2026
+ 
+**Focus: CSV logging and capturing baseline.**
+ 
+- **Added CSV logging to the poller.** The containerised poller now reads the
+  full register block each poll and appends a timestamped row to a CSV on a
+  mounted host folder.
+- **Captured a clean one-hour steady-state baseline.** Reset the GRFICS
+  containers, let the process settle, then recorded 3600 rows over about 64
+  minutes.
+---
