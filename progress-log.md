@@ -204,3 +204,29 @@ mattered.
   false-positive rate; a second clean capture is needed as a held-out check. The
   exclusion filter also leaves the detector blind during excluded samples.
 ---
+
+## Tuesday, 21 July 2026
+
+**Focus: starting the C# port of the detector.**
+
+- **Moved the locked constants into config.** The fit coefficients, sigma, slack
+  and threshold for both streams added to `appsettings.json` instead of the
+  code.
+- **Ported the CUSUM recursion to C#.** Added a `CusumDetector` class that holds
+  one stream's state and updates it each poll. It follows the Python version 
+  because the parameters were tuned against that exact form.
+- **Kept the detector separate from the poll loop.** The Modbus code stays
+  untouched and the same detector class can later be replayed against the
+  baseline CSV to check the port is correct.
+---
+
+## Thursday, 23 July 2026
+
+**Focus: porting the poll-delay exclusion.**
+
+- **Added a `PollGuard` class.** It measures the gap between polls and blocks the
+  detector when a cycle stalls, then keeps blocking for the next four samples.
+- **Changed how the recovery window works.** Python looked backwards over a
+  finished file, which a live detector cannot do. The window is now a counter that
+  is set when a stall happens and counts down.
+---
