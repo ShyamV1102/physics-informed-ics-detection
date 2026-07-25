@@ -5,6 +5,7 @@ import numpy as np
 RUN_GRID = False
 RUN_DIAGNOSTICS = False
 RUN_REJECTED = False
+RUN_VERIFY = False
 
 def scale_raw_to_real(rawValues, real_max):
     return (rawValues * real_max / 65535)
@@ -56,6 +57,20 @@ def run_cusum(resid, slack=0.5, h=5.0):
     return alarms, mu, sigma, np.array(hi_series), np.array(lo_series)
 
 
+def cusum_trace(resid, slack, h, mu=0.0, sigma=1.0):
+    z = (resid - mu) / sigma
+    s_hi = s_lo = 0.0
+    Z, HI, LO = [], [], []
+    for val in z:
+        s_hi = max(0.0, s_hi + val - slack)
+        s_lo = min(0.0, s_lo + val + slack)
+        if s_hi > h:
+            s_hi = 0.0
+        if s_lo < -h:
+            s_lo = 0.0
+        Z.append(val); HI.append(s_hi); LO.append(s_lo)
+    return Z, HI, LO
+
 #ModbusPoller/ModbusPoller/data/
 path = Path(__file__).parent / 'ModbusPoller/ModbusPoller/data/readings.csv'
 file = pd.read_csv(path, skipinitialspace=True, parse_dates=['timestamp'])
@@ -63,7 +78,7 @@ file['dt'] = file['timestamp'].diff().dt.total_seconds()
 file['Pressure'] = getRealPressureValues()
 file['Level'] = getRealLevelValues()
 file['ProductFlow'] = getRealProductPurgeFlowValues('Product')
-file['PurgeFlow'] = getRealProductPurgeFlowValues('Purge')
+file['PurgeFlow'] = getRealProductPurgeFlowValues('Purge')  
 file['AFlow'] = getAFlowValue()
 file['ProductValvePos'] = getProductPurgeValvePos('Product')
 file['PurgeValvePos'] = getProductPurgeValvePos('Purge')
@@ -110,6 +125,53 @@ for name, (resid, slack, h) in locked.items():
     alarms, mu, sigma, hi, lo = run_cusum(resid, slack, h)
     print(f"{name}: slack={slack}, h={h}, alarms={alarms}, mu={mu:.8f}, sigma={sigma:.8f}")
 
+if RUN_VERIFY:
+    export = clean[['timestamp', 'ProductFlowReg', 'ProductValvePosReg',
+                    'PurgeFlowReg', 'PurgeValvePosReg']].copy()
+
+    M_PROD, C_PROD, SIG_PROD = 2.12546546, -0.00309158, 0.07179686
+    M_PURGE, C_PURGE, SIG_PURGE = 4.48571184, 0.00409840, 0.08653334
+
+    resid_prod_locked  = clean['ProductFlow'] - (M_PROD  * clean['ProductValvePos'] + C_PROD)
+    resid_purge_locked = clean['PurgeFlow']   - (M_PURGE * clean['PurgeValvePos']   + C_PURGE)
+
+    zp, hip, lop = cusum_trace(resid_prod_locked,  0.75, 5.0, sigma=SIG_PROD)
+    zq, hiq, loq = cusum_trace(resid_purge_locked, 0.5,  6.0, sigma=SIG_PURGE)
+
+    export['py_prod_z'] = zp
+    export['py_prod_shi'] = hip
+    export['py_prod_slo'] = lop
+    export['py_purge_z'] = zq
+    export['py_purge_shi'] = hiq
+    export['py_purge_slo'] = loq
+
+    DATA = Path(__file__).parent / 'ModbusPoller/ModbusPoller/data'
+    export.to_csv(DATA / 'clean_export.csv', index=False)
+    cs_path = DATA / 'cs_trace.csv'
+    if cs_path.exists():
+        cs = pd.read_csv(cs_path, skipinitialspace=True)
+        cs['timestamp'] = pd.to_datetime(cs['timestamp'])
+        merged = export.merge(cs, on='timestamp')
+        print(f"rows: export={len(export)}, merged={len(merged)}")
+        for col in ['prod_z', 'prod_shi', 'prod_slo', 'purge_z', 'purge_shi', 'purge_slo']:
+            diff = (merged[f'py_{col}'] - merged[f'cs_{col}']).abs().max()
+            print(f"{col}: max abs diff = {diff}")
+
+    clean[['timestamp']].to_csv(DATA / 'py_clean_ts.csv', index=False)
+
+    cs_ts_path = DATA / 'cs_clean_ts.csv'
+    if cs_ts_path.exists():
+        py_ts = set(pd.to_datetime(clean['timestamp']))
+        cs_ts = set(pd.to_datetime(pd.read_csv(cs_ts_path)['timestamp']))
+
+        print(f"python kept: {len(py_ts)}")
+        print(f"c# kept:     {len(cs_ts)}")
+        print(f"in python not c#: {len(py_ts - cs_ts)}")
+        print(f"in c# not python: {len(cs_ts - py_ts)}")
+
+    print(nominal)
+
+    
 if RUN_DIAGNOSTICS:
     file['ramp'] = file['ProductValvePos'].diff().abs()
     ramp_product = file['ramp'][clean.index]

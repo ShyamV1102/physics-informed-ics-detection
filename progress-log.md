@@ -230,3 +230,17 @@ mattered.
   finished file, which a live detector cannot do. The window is now a counter that
   is set when a stall happens and counts down.
 ---
+
+**Focus: finishing the C# port and checking it against Python.**
+
+- **Wired the guard and detectors into the poll loop.** The detection now runs
+  live alongside the polling.
+- **Added detection output to its own CSV.** One row per poll, keyed by the same
+  timestamp as the readings file, so the raw readings stay untouched.
+- **Checked the port against Python.** Replayed the baseline through both. The
+  numbers matched to machine precision, and the guard dropped the same rows,
+  apart from five at the very start that come from a harmless difference in how
+  the first row is handled.
+- **Port complete.** The parameters tuned in Python now carry over to the live
+  detector unchanged.
+---

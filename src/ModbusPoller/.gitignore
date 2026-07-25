@@ -480,3 +480,7 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+ModbusPoller/ModbusPoller/data/*_ts.csv
+ModbusPoller/ModbusPoller/data/clean_export.csv
+ModbusPoller/ModbusPoller/data/cs_trace.csv

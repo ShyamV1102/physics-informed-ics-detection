@@ -13,15 +13,25 @@ namespace ModbusPoller
                 .SetBasePath(AppContext.BaseDirectory)
                 .AddJsonFile("appsettings.json")
                 .Build();
-
             var detection = config.GetSection("Detection").Get<DetectionConfig>();
-
+            var pollGuard = new PollGuard(detection.PollGuard);
             var productDetector = new CusumDetector(detection.Streams["Product"]);
             var purgeDetector = new CusumDetector(detection.Streams["Purge"]);
-            //var poll = new Helper();
-            //await poll.Connect();
 
-            Console.WriteLine($"sigma={detection.Streams["Product"].Sigma}, recovery={detection.PollGuard.RecoverySamples}");
+
+            if (args.Length > 0 && args[0] == "replay")
+            {
+                Replay.Run(detection, "data/clean_export.csv", "data/cs_trace.csv");
+                return;
+            }
+
+            if (args.Length > 0 && args[0] == "guardreplay")
+            {
+                GuardReplay.Run(detection, "data/readings.csv", "data/cs_clean_ts.csv");
+                return;
+            }
+            var poll = new Helper(pollGuard, productDetector, purgeDetector);
+            await poll.Connect();
         }
 
     }
