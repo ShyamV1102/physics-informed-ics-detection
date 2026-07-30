@@ -6,6 +6,8 @@ RUN_GRID = False
 RUN_DIAGNOSTICS = False
 RUN_REJECTED = False
 RUN_VERIFY = False
+RUN_HELDOUT = True
+RUN_OPPOINT = False
 
 def scale_raw_to_real(rawValues, real_max):
     return (rawValues * real_max / 65535)
@@ -71,8 +73,24 @@ def cusum_trace(resid, slack, h, mu=0.0, sigma=1.0):
         Z.append(val); HI.append(s_hi); LO.append(s_lo)
     return Z, HI, LO
 
+
+def cusum_count(resid, slack, h, mu=0.0, sigma=1.0):
+    z = (resid - mu) / sigma
+    s_hi = s_lo = 0.0
+    alarms = 0
+    for val in z:
+        s_hi = max(0.0, s_hi + val - slack)
+        s_lo = min(0.0, s_lo + val + slack)
+        if s_hi > h:
+            alarms += 1
+            s_hi = 0.0
+        if s_lo < -h:
+            alarms += 1
+            s_lo = 0.0
+    return alarms
+
 #ModbusPoller/ModbusPoller/data/
-path = Path(__file__).parent / 'ModbusPoller/ModbusPoller/data/readings.csv'
+path = Path(__file__).parent / 'ModbusPoller/ModbusPoller/data/baseline_clean_2.csv'
 file = pd.read_csv(path, skipinitialspace=True, parse_dates=['timestamp'])
 file['dt'] = file['timestamp'].diff().dt.total_seconds()
 file['Pressure'] = getRealPressureValues()
@@ -204,3 +222,30 @@ if RUN_REJECTED:
 
     resid_level = clean['Level'] - clean['LevelSetpoint']
     print(resid_level.std(), resid_level.mean())
+
+
+if RUN_HELDOUT:
+    M_PROD, C_PROD, SIG_PROD = 2.12546546, -0.00309158, 0.07179686
+    M_PURGE, C_PURGE, SIG_PURGE = 4.48571184, 0.00409840, 0.08653334
+
+    resid_prod_locked  = clean['ProductFlow'] - (M_PROD  * clean['ProductValvePos'] + C_PROD)
+    resid_purge_locked = clean['PurgeFlow']   - (M_PURGE * clean['PurgeValvePos']   + C_PURGE)
+
+    a_prod  = cusum_count(resid_prod_locked,  0.75, 5.0, mu=0.0, sigma=SIG_PROD)
+    a_purge = cusum_count(resid_purge_locked, 0.5,  6.0, mu=0.0, sigma=SIG_PURGE)
+
+    n = len(clean)
+    print(f"held-out rows (clean): {n}")
+    print(f"product alarms: {a_prod}  FPR: {a_prod / n:.6f}")
+    print(f"purge alarms:   {a_purge}  FPR: {a_purge / n:.6f}")
+    print(f"combined alarms: {a_prod + a_purge}  FPR: {(a_prod + a_purge) / n:.6f}")
+
+if RUN_OPPOINT:
+    cols = ['ProductFlow', 'PurgeFlow', 'ProductValvePos', 'PurgeValvePos',
+            'Pressure', 'Level', 'LevelSetpoint']
+    print("held-out operating point (clean rows only):")
+    for col in cols:
+        s = clean[col]
+        print(f"{col:16s} mean={s.mean():10.4f}  std={s.std():8.4f}  "
+              f"min={s.min():10.4f}  max={s.max():10.4f}")
+    print(f"rows (clean): {len(clean)}")
