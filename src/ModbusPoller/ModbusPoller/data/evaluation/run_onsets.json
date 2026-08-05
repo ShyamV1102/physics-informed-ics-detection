@@ -1,0 +1,26 @@
+{
+  "_comment": "Onset ground truth for the 2026-08-04/05 evaluation dataset. All times UTC.",
+  "_basis_values": {
+    "logged": "written by the attack script on the same host clock as the poller, exact",
+    "inferred": "recovered from residual departure, upper-bound latency",
+    "clean": "clean run, no attack expected",
+    "blind_no_onset": "attack physics never detects; onset not needed for recall"
+  },
+  "detection_20260804_baseline.csv":            { "onset": null, "basis": "clean" },
+  "detection_20260804_false_sensor.csv":        { "onset": "2026-08-05T16:23:13.681808Z", "basis": "logged" },
+  "detection_20260804_replay.csv":              { "onset": "2026-08-05T16:29:36.909041Z", "basis": "logged" },
+  "detection_20260804_cmd_autosp.csv":          { "onset": null, "basis": "blind_no_onset" },
+  "detection_20260804_cmd_manual_setpoint.csv": { "onset": "2026-08-04T14:28:51.640Z", "basis": "inferred" },
+  "detection_20260804_cmd_aggressive.csv":      { "onset": "2026-08-04T15:01:14.629Z", "basis": "inferred" },
+  "detection_20260804_cmd_manual_sweep.csv":    { "onset": "2026-08-04T15:11:07.749Z", "basis": "inferred" },
+  "detection_20260804_drift_001.csv":           { "onset": "2026-08-04T18:24:52.036523Z", "basis": "logged", "rate": 0.01 },
+  "detection_20260804_drift_002.csv":           { "onset": "2026-08-04T18:36:33.896399Z", "basis": "logged", "rate": 0.02 },
+  "detection_20260804_drift_005.csv":           { "onset": "2026-08-05T08:52:06.208565Z", "basis": "logged", "rate": 0.05 },
+  "detection_20260804_drift_020.csv":           { "onset": "2026-08-05T09:02:20.227383Z", "basis": "logged", "rate": 0.20 },
+  "detection_20260804_drift_050.csv":           { "onset": "2026-08-05T09:19:45.919099Z", "basis": "logged", "rate": 0.50 },
+  "detection_20260804_drift_100.csv":           { "onset": "2026-08-05T09:33:08.252823Z", "basis": "logged", "rate": 1.00 },
+  "detection_20260804_drift_0005.csv":          { "onset": "2026-08-05T10:01:25.678507Z", "basis": "logged", "rate": 0.005 },
+  "detection_20260804_drift_0002.csv":          { "onset": "2026-08-05T10:24:20.809091Z", "basis": "logged", "rate": 0.002 },
+  "detection_20260804_drift_0001.csv":          { "onset": "2026-08-05T11:08:51.438820Z", "basis": "logged", "rate": 0.001 },
+  "detection_20260804_drift_00005.csv":         { "onset": "2026-08-05T11:33:38.204050Z", "basis": "logged", "rate": 0.0005 }
+}

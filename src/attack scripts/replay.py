@@ -1,4 +1,4 @@
-import socket, struct, threading, time, csv, datetime, os
+import socket, struct, threading, time, csv, datetime, os, sys
 
 LISTEN = ("0.0.0.0", 502)
 TARGET = ("192.168.95.2", 502)
@@ -98,7 +98,7 @@ if __name__ == "__main__":
     threading.Thread(target=serve, daemon=True).start()
     time.sleep(0.5)
 
-    record(30)  # capture 30 real seconds of valve-flow pairs before attacking
+    record(120)  # capture past one full process cycle to avoid the buffer-wrap seam
 
     input("Press Enter to START replay attack on ProductValve+ProductFlow (106,107)...")
     onset = datetime.datetime.utcnow().isoformat()
@@ -111,10 +111,18 @@ if __name__ == "__main__":
     offset = datetime.datetime.utcnow().isoformat()
     print("ATTACK STOPPED at", offset)
 
-    log_path = "/app/data/attack_log_replay.csv"
+    RUN_ID = sys.argv[1] if len(sys.argv) > 1 else "replay"
+    log_path = f"/app/data/attack_log_{RUN_ID}.csv"
     with open(log_path, "w", newline="") as f:
         w = csv.writer(f)
         w.writerow(["timestamp_utc", "valve_raw", "flow_raw"])
         w.writerows(log_rows)
+
+    meta_path = f"/app/data/{RUN_ID}_meta.csv"
+    with open(meta_path, "w", newline="") as f:
+        w = csv.writer(f)
+        w.writerow(["run_id", "attack_type", "onset_utc", "offset_utc", "tampered_rows"])
+        w.writerow([RUN_ID, "replay", onset, offset, len(log_rows)])
+
     print(f"onset={onset} offset={offset}, {len(log_rows)} tampered responses logged")
-    print(f"log written to {log_path}")
+    print(f"log written to {log_path} and {meta_path}")

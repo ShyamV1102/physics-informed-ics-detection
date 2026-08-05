@@ -231,6 +231,8 @@ mattered.
   is set when a stall happens and counts down.
 ---
 
+## Saturday, 25 July 2026
+
 **Focus: finishing the C# port and checking it against Python.**
 
 - **Wired the guard and detectors into the poll loop.** The detection now runs
@@ -243,4 +245,62 @@ mattered.
   the first row is handled.
 - **Port complete.** The parameters tuned in Python now carry over to the live
   detector unchanged.
+---
+
+## Monday, 28 July 2026
+
+**Focus: an honest false-positive rate.**
+
+- Captured a second, independent clean run and measured the false-positive rate
+  on it.
+- Confirmed the calibration is stable across runs rather than fitted to one
+  dataset.
+
+---
+
+## Wednesday, 30 July to Friday, 1 August 2026
+
+**Focus: building the attack set.**
+
+- Built an injection setup that lets attacks be started and stopped with exact
+  timing, which is what makes the dataset accurately labelled.
+- Built four attack types: false sensor readings, replay, slow covert drift,
+  and command injection.
+- Found that detection speed depends on how aggressive an attack is. Fast,
+  obvious attacks are caught quickly; slow and subtle ones are harder.
+
+---
+
+## Sunday, 3 August 2026
+
+**Focus: the network-based detection method, for comparison.**
+
+- Built a second detector that watches network traffic instead of process
+  physics, so the two approaches can be compared fairly.
+- Confirmed one attack (replay) is invisible to both methods from this vantage
+  point, which is itself a useful finding.
+- Made the two methods comparable by measuring them on the same time basis.
+
+---
+
+## Tuesday, 5 August 2026
+
+**Focus: producing the final labelled dataset and results.**
+
+- Found and corrected an error in how detection speed was being measured, which
+  had made attacks look slower to detect than they really were. The corrected
+  results are cleaner and more accurate.
+- Regenerated the full dataset with exact, automatically recorded attack timings,
+  replacing earlier estimated timings. Seventeen runs in total covering all
+  attack types.
+- Clarified the command injection results: there is one variant that genuinely
+  hides from the physics detector and one that is always caught, rather than
+  several separate cases.
+- Measured how slow a covert drift attack must be to escape detection. The
+  detector reliably catches drift down to a clear point, below which detection
+  fades out and the attack eventually escapes.
+- Computed the full set of accuracy measures across all attacks. The detector
+  catches 14 of 16 attacks, missing only the two known blind spots, with a very
+  low false-alarm rate.
+
 ---

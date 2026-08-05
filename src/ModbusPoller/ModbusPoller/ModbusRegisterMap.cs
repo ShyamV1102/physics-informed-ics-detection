@@ -24,10 +24,15 @@ namespace ModbusPoller
         public const ushort CInPurgeReg = 112;
 
         // Holding registers (%MW0–%MW4)
+        public const ushort PurgeManualSp = 12;
+        public const ushort ProductManualSp = 13;
         public const ushort ProductFlowSpReg = 1024;
         public const ushort ASetpointReg = 1025;
         public const ushort PressureSpReg = 1026;
         public const ushort OverrideSpReg = 1027;
         public const ushort LevelSpReg = 1028;
+
+        //Coil Registers
+        public const ushort ManualRegister = 0;
     }
 }

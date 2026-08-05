@@ -90,7 +90,7 @@ def cusum_count(resid, slack, h, mu=0.0, sigma=1.0):
     return alarms
 
 #ModbusPoller/ModbusPoller/data/
-path = Path(__file__).parent / 'ModbusPoller/ModbusPoller/data/baseline_clean_2.csv'
+path = Path(__file__).parent / 'ModbusPoller/ModbusPoller/data/baseline_run_3.csv'
 file = pd.read_csv(path, skipinitialspace=True, parse_dates=['timestamp'])
 file['dt'] = file['timestamp'].diff().dt.total_seconds()
 file['Pressure'] = getRealPressureValues()

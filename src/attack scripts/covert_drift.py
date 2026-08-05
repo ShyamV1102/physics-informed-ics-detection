@@ -103,11 +103,18 @@ if __name__ == "__main__":
     attack["active"] = False
     offset = datetime.datetime.utcnow().isoformat()
     print("ATTACK STOPPED at", offset)
-
-    log_path = f"/app/data/attack_log_covert_drift_{RATE_SIGMA_PER_SEC:.3f}.csv"
+    RUN_ID = sys.argv[2] if len(sys.argv) > 2 else f"drift_{RATE_SIGMA_PER_SEC:.3f}"
+    log_path = f"/app/data/attack_log_{RUN_ID}.csv"
     with open(log_path, "w", newline="") as f:
         w = csv.writer(f)
         w.writerow(["timestamp_utc", "elapsed_sec", "true_raw", "spoofed_raw", "drift_real"])
         w.writerows(log_rows)
+
+    meta_path = f"/app/data/{RUN_ID}_meta.csv"
+    with open(meta_path, "w", newline="") as f:
+        w = csv.writer(f)
+        w.writerow(["run_id", "rate_sigma_per_sec", "onset_utc", "offset_utc", "tampered_rows"])
+        w.writerow([RUN_ID, RATE_SIGMA_PER_SEC, onset, offset, len(log_rows)])
+
     print(f"onset={onset} offset={offset}, {len(log_rows)} tampered responses logged")
-    print(f"log written to {log_path}")
+    print(f"log written to {log_path} and {meta_path}")

@@ -1,5 +1,6 @@
 import socket, struct, threading, time, csv, datetime
 import os
+import sys
 
 LISTEN = ("0.0.0.0", 502)
 TARGET = ("192.168.95.2", 502)
@@ -110,11 +111,18 @@ if __name__ == "__main__":
     offset = datetime.datetime.utcnow().isoformat()
     print("ATTACK STOPPED at", offset)
 
-    LOG_PATH = "/app/data/attack_log_false_sensor.csv"
-    
-
+    RUN_ID = sys.argv[1] if len(sys.argv) > 1 else "false_sensor"
+    LOG_PATH = f"/app/data/attack_log_{RUN_ID}.csv"
     with open(LOG_PATH, "w", newline="") as f:
         w = csv.writer(f)
         w.writerow(["timestamp_utc", "true_raw", "spoofed_raw", "offset_real"])
         w.writerows(log_rows)
+
+    meta_path = f"/app/data/{RUN_ID}_meta.csv"
+    with open(meta_path, "w", newline="") as f:
+        w = csv.writer(f)
+        w.writerow(["run_id", "attack_type", "onset_utc", "offset_utc", "tampered_rows"])
+        w.writerow([RUN_ID, "false_sensor", onset, offset, len(log_rows)])
+
     print(f"onset={onset} offset={offset}, {len(log_rows)} tampered responses logged")
+    print(f"log written to {LOG_PATH} and {meta_path}")

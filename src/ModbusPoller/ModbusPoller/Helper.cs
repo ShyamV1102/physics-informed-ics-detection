@@ -12,18 +12,21 @@ namespace ModbusPoller
 {
     public class Helper
     {
-        private readonly string _ip = "192.168.95.2";
+        private readonly string _ip;
         private readonly int _port = 502;
 
         private readonly PollGuard _pollGuard;
         private readonly CusumDetector _productDetector;
         private readonly CusumDetector _purgeDetector;
+        private readonly string _runId;
 
-        public Helper(PollGuard pollGuard, CusumDetector productDetector, CusumDetector purgeDetector)
+        public Helper(PollGuard pollGuard, CusumDetector productDetector, CusumDetector purgeDetector, string runId, string target)
         {
             _pollGuard = pollGuard;
             _productDetector = productDetector;
             _purgeDetector = purgeDetector;
+            _runId = runId;
+            _ip = target;
         }
         public async Task Connect()
         {
@@ -34,19 +37,20 @@ namespace ModbusPoller
                 {
                     using (IModbusMaster master = factory.CreateMaster(tcpClient))
                     {
-                        string path = "/app/data/readings.csv";
-                        if (!File.Exists(path))
+                        Directory.CreateDirectory("/app/data");
+                        string path = $"/app/data/raw_{_runId}.csv";
+                        string detectionPath = $"/app/data/detection_{_runId}.csv";
+
+                        if (File.Exists(path) || File.Exists(detectionPath))
                         {
-                            Directory.CreateDirectory("/app/data");
-                            //File.Create(path);
-                            File.AppendAllText(path, "timestamp, F1ValvePosReg, F1FlowReg, F2ValvePosReg, F2FlowReg, PurgeValvePosReg, PurgeFlowReg, ProductValvePosReg, ProductFlowReg, PressureReg, LevelReg, AInPurgeReg, BInPurgeReg, CInPurgeReg, ProductFlowSpReg, ASetpointReg, PressureSpReg, OverrideSpReg, LevelSpReg\n");
+                            Console.WriteLine($"ERROR: files for run '{_runId}' already exist. Choose a new run id or delete the old files.");
+                            return;
                         }
-                        string detectionPath = "/app/data/detection.csv";
-                        if (!File.Exists(detectionPath))
-                        {
-                            File.AppendAllText(detectionPath,
-                                "timestamp, productExpected, productResidual, productZ, productSHigh, productSLow, productAlarm, purgeExpected, purgeResidual, purgeZ, purgeSHigh, purgeSLow, purgeAlarm\n");
-                        }
+
+                        File.AppendAllText(path, "timestamp, F1ValvePosReg, F1FlowReg, F2ValvePosReg, F2FlowReg, PurgeValvePosReg, PurgeFlowReg, ProductValvePosReg, ProductFlowReg, PressureReg, LevelReg, AInPurgeReg, BInPurgeReg, CInPurgeReg, ProductFlowSpReg, ASetpointReg, PressureSpReg, OverrideSpReg, LevelSpReg, PurgeManualSp, ProductManualSp, CoilReg\n");
+                        File.AppendAllText(detectionPath,
+                            "timestamp, productExpected, productResidual, productZ, productSHigh, productSLow, productAlarm, purgeExpected, purgeResidual, purgeZ, purgeSHigh, purgeSLow, purgeAlarm\n");
+
                         for (int loopCount = 0; loopCount < 3600; loopCount++)
                         {
                             if (tcpClient.Connected)
@@ -54,12 +58,14 @@ namespace ModbusPoller
 
                                 var inputRegisterValues = await master.ReadInputRegistersAsync(Convert.ToByte(0), ModbusRegisterMap.F1ValvePosReg, 13);
                                 var holdingRegisterValues = await master.ReadHoldingRegistersAsync(Convert.ToByte(0), ModbusRegisterMap.ProductFlowSpReg, 5);
+                                var manualSpRegisterValues = await master.ReadHoldingRegistersAsync(Convert.ToByte(0), ModbusRegisterMap.PurgeManualSp, 2);
+                                var coilRegisterValues = await master.ReadCoilsAsync(Convert.ToByte(0), ModbusRegisterMap.ManualRegister, 1);
                                 Console.WriteLine($"Progress = {(double)loopCount/3600 * 100:F1}");
                                 DateTime now = DateTime.UtcNow;
                                 string timestamp = now.ToString("O");
-                                string row = $"{timestamp}, {inputRegisterValues[0]}, {inputRegisterValues[1]}, {inputRegisterValues[2]}, {inputRegisterValues[3]}, {inputRegisterValues[4]}, {inputRegisterValues[5]}, {inputRegisterValues[6]}, {inputRegisterValues[7]}, {inputRegisterValues[8]}, {inputRegisterValues[9]}, {inputRegisterValues[10]}, {inputRegisterValues[11]}, {inputRegisterValues[12]}, {holdingRegisterValues[0]}, {holdingRegisterValues[1]}, {holdingRegisterValues[2]}, {holdingRegisterValues[3]}, {holdingRegisterValues[4]}\n";
+                                string row = $"{timestamp}, {inputRegisterValues[0]}, {inputRegisterValues[1]}, {inputRegisterValues[2]}, {inputRegisterValues[3]}, {inputRegisterValues[4]}, {inputRegisterValues[5]}, {inputRegisterValues[6]}, {inputRegisterValues[7]}, {inputRegisterValues[8]}, {inputRegisterValues[9]}, {inputRegisterValues[10]}, {inputRegisterValues[11]}, {inputRegisterValues[12]}, {holdingRegisterValues[0]}, {holdingRegisterValues[1]}, {holdingRegisterValues[2]}, {holdingRegisterValues[3]}, {holdingRegisterValues[4]}, {manualSpRegisterValues[0]}, {manualSpRegisterValues[1]}, {(coilRegisterValues[0] ? 1 : 0)}\n";
 
-                                
+
 
                                 if (_pollGuard.ShouldUpdate(now))
                                 {

@@ -30,8 +30,10 @@ namespace ModbusPoller
                 GuardReplay.Run(detection, "data/readings.csv", "data/cs_clean_ts.csv");
                 return;
             }
-            var poll = new Helper(pollGuard, productDetector, purgeDetector);
-            await poll.Connect();
+            string runId = args.Length > 0 ? args[0] : "unnamed_run";
+            string target = args.Length > 1 ? args[1] : "attack-proxy";
+            var poll = new Helper(pollGuard, productDetector, purgeDetector, runId, target);
+            await poll.Connect();   
         }
 
     }
