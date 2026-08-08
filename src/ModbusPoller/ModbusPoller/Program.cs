@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Configuration;
+using ModbusPoller.Db;
 using ModbusPoller.Detection;
 using NModbus;
 using System.Net.Sockets;
@@ -32,8 +33,18 @@ namespace ModbusPoller
             }
             string runId = args.Length > 0 ? args[0] : "unnamed_run";
             string target = args.Length > 1 ? args[1] : "attack-proxy";
-            var poll = new Helper(pollGuard, productDetector, purgeDetector, runId, target);
-            await poll.Connect();   
+            string? pg = Environment.GetEnvironmentVariable("PG_CONN");
+            LiveWriter? live = null;
+            if (!string.IsNullOrWhiteSpace(pg))
+            {
+                live = new LiveWriter(pg);
+                await live.StartRunAsync(runId, "live", null, null, "live poller run");
+            }
+
+            var poll = new Helper(pollGuard, productDetector, purgeDetector, runId, target, live, 5.0, 6.0);
+            await poll.Connect();
+
+            if (live != null) await live.DisposeAsync();
         }
 
     }

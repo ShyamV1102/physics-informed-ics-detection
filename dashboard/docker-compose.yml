@@ -1,0 +1,29 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: icsdash-db
+    environment:
+      POSTGRES_USER: ics
+      POSTGRES_PASSWORD: icsdash
+      POSTGRES_DB: icsdash
+    ports:
+      - "5432:5432"
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+
+  grafana:
+    image: grafana/grafana:13.1.1
+    container_name: icsdash-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    volumes:
+      - grafanadata:/var/lib/grafana
+    depends_on:
+      - postgres
+
+volumes:
+  dbdata:
+  grafanadata:

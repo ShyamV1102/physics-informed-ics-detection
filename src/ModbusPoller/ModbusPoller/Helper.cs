@@ -1,12 +1,8 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using ModbusPoller.Db;
 using ModbusPoller.Detection;
 using NModbus;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.IO.Pipelines;
 using System.Net.Sockets;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ModbusPoller
 {
@@ -19,14 +15,21 @@ namespace ModbusPoller
         private readonly CusumDetector _productDetector;
         private readonly CusumDetector _purgeDetector;
         private readonly string _runId;
+        private readonly LiveWriter? _live;
+        private readonly double _productH;
+        private readonly double _purgeH;
+        private DateTime? _lastTs;
 
-        public Helper(PollGuard pollGuard, CusumDetector productDetector, CusumDetector purgeDetector, string runId, string target)
+        public Helper(PollGuard pollGuard, CusumDetector productDetector, CusumDetector purgeDetector, string runId, string target, LiveWriter? live, double productH, double purgeH)
         {
             _pollGuard = pollGuard;
             _productDetector = productDetector;
             _purgeDetector = purgeDetector;
             _runId = runId;
             _ip = target;
+            _live = live;
+            _productH = productH;
+            _purgeH = purgeH;
         }
         public async Task Connect()
         {
@@ -78,6 +81,25 @@ namespace ModbusPoller
                                     var purgeResult = _purgeDetector.Update(purgeFlow, purgeValve);
                                     string detectionRow = FormattableString.Invariant($"{timestamp}, {productResult.Expected}, {productResult.Residual}, {productResult.Z}, {productResult.SHigh}, {productResult.SLow}, {(productResult.Alarm ? 1 : 0)}, {purgeResult.Expected}, {purgeResult.Residual}, {purgeResult.Z}, {purgeResult.SHigh}, {purgeResult.SLow}, {(purgeResult.Alarm ? 1 : 0)}\n");
                                     File.AppendAllText(detectionPath, detectionRow);
+                                    if (_live != null)
+                                    {
+                                        double? dt = _lastTs.HasValue ? (now - _lastTs.Value).TotalSeconds : null;
+                                        _lastTs = now;
+
+                                        double? ScaleSp(ushort raw) => raw == 65535 ? null : raw * 500.0 / 65535.0;
+
+                                        _live.Enqueue(new ProcessSample(_runId, now, "product",
+                                            inputRegisterValues[6], productValve, inputRegisterValues[7], productFlow,
+                                            productResult.Expected, productResult.Residual, productResult.Z,
+                                            productResult.SHigh, productResult.SLow, _productH,
+                                            ScaleSp(manualSpRegisterValues[1]), dt, false, productResult.Alarm));
+
+                                        _live.Enqueue(new ProcessSample(_runId, now, "purge",
+                                            inputRegisterValues[4], purgeValve, inputRegisterValues[5], purgeFlow,
+                                            purgeResult.Expected, purgeResult.Residual, purgeResult.Z,
+                                            purgeResult.SHigh, purgeResult.SLow, _purgeH,
+                                            ScaleSp(manualSpRegisterValues[0]), dt, false, purgeResult.Alarm));
+                                    }
                                     if (productResult.Alarm)
                                         Console.WriteLine($"{now:o} ALARM product sHigh={productResult.SHigh:F2} sLow={productResult.SLow:F2}");
                                     if (purgeResult.Alarm)
