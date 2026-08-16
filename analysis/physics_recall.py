@@ -28,7 +28,7 @@ import pandas as pd
 H_PRODUCT = 5.0
 H_PURGE = 6.0
 
-ONSET_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "evaluation/run_onsets.json")
+ONSET_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "evaluation", "run_onsets.json")
 
 
 def load_onsets():

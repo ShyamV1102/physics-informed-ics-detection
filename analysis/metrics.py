@@ -34,7 +34,7 @@ import sys
 import numpy as np
 import pandas as pd
 
-ONSET_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "evaluation/run_onsets.json")
+ONSET_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "evaluation", "run_onsets.json")
 
 # Which stream carries the injected signal for each attack type.
 # "product" -> judge product only. "both" -> either stream counts.
