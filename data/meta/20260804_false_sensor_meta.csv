@@ -1,0 +1,2 @@
+run_id,attack_type,onset_utc,offset_utc,tampered_rows
+20260804_false_sensor,false_sensor,2026-08-05T16:23:13.681808,2026-08-05T16:24:14.469226,58

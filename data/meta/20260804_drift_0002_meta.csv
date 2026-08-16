@@ -1,0 +1,2 @@
+run_id,rate_sigma_per_sec,onset_utc,offset_utc,tampered_rows
+20260804_drift_0002,0.002,2026-08-05T10:24:20.809091,2026-08-05T10:44:22.093774,1173
