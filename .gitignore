@@ -1,0 +1,18 @@
+# Build output
+bin/
+obj/
+*.user
+
+# Large captures
+*.pcap
+*.pcapng
+*_modbus.log
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# OS
+.DS_Store
+Thumbs.db
