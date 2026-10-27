@@ -24,12 +24,10 @@ data/
   meta/              per-run metadata
   attack-logs/       proxy tamper logs, one per attack run
 dashboard/           Postgres schema, Grafana dashboards, docker-compose
-docs/                proposal and literature review
 network/             Zeek capture and scoring notes
 src/
   ModbusPoller/      C# .NET 8 detection engine
   attack-scripts/    Python attack tooling
-progress-log.md      development log
 ```
 
 ---
